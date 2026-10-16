@@ -9,6 +9,12 @@
 
 export type CsvValue = string | number | boolean | null | undefined;
 
+export interface CsvColumn<T> {
+  key: string;
+  header: string;
+  value: (row: T) => CsvValue;
+}
+
 function encodeField(value: CsvValue): string {
   let s = value == null ? '' : String(value);
 
@@ -31,6 +37,14 @@ export function toCsv(headers: readonly CsvValue[], rows: readonly CsvValue[][])
     .join('\r\n');
 }
 
+/** Export typed history rows using only the caller-selected columns. */
+export function toCsvColumns<T>(rows: readonly T[], columns: readonly CsvColumn<T>[]): string {
+  return toCsv(
+    columns.map((column) => column.header),
+    rows.map((row) => columns.map((column) => column.value(row))),
+  );
+}
+
 /**
  * Trigger a browser download of `csv` as `filename`. No-op outside the browser.
  * A UTF-8 BOM is prepended so Excel reads non-ASCII characters correctly.
@@ -50,3 +64,4 @@ export function downloadCsv(filename: string, csv: string): void {
   anchor.remove();
   URL.revokeObjectURL(url);
 }
+
